@@ -355,8 +355,85 @@ class Node:
                 (1 - self.param_dr * self.param_dt - self.param_qr * self.param_dt))
                 
         # Transition 11 - Exposed[n_exp] to Infected[1]
+        if self.param_n_exp != 0:
+            self.expval.append(self.states_x[ind_expn] * (1 - self.param_dr * self.param_dt))
             
+        # Transition 12 - Exposed[i] to Quarantined[i+1] until i+1 == n_exp
+        for ind in range(self.param_n_exp - 1):
+            self.expval.append(self.states_x[ind_exp1 + ind - 1] * (self.param_dr * self.param_dt))
             
+        # Transition 13 - Quarantined[i] to Quarantined[i+1] until i+1 == n_exp
+        for ind in range(self.param_n_exp - 1):
+            self.expval.append(self.states_x[ind_qua1 + ind - 1] * (1- self.param_dr * self.param_dt))
+            
+        # Transition 14 - Quarantined[n_exp] to Isolated[1]
+        if self.param_n_exp != 0:
+            self.expval.append(self.states_x[ind_quan] * (1- self.param_dr * self.param_dt))
+            
+        # Transition 15 - Infected[i] to Infected[i+1] until i+1 == n_inf
+        for ind in range(self.param_n_inf - 1):
+            self.expval.append(self.states_x[ind_inf1 + ind - 1] * \
+                               (1 - self.param_dr * self.param_dt - self.param_ir * self.param_dt))
+        
+        # Transition 16 - Isolated[i] to Isolated[i+1] until i+1 == n_inf
+        for ind in range(self.param_n_inf - 1):
+            self.expval.append(self.states_x[ind_iso1 + ind - 1] * \
+                               (1 - self.param_dr * self.param_dt))
+                
+        # Transition 17 - Infected[i] to Isolated[i+1] until i+1 == n_inf
+        for ind in range(self.param_n_inf - 1):
+            self.expval.append(self.states_x[ind_inf1 + ind - 1] * \
+                               (self.param_ir * self.param_dt))
+        
+        # Transition 18 - Infected[n_inf] to Recovery_Immunized
+        self.expval.append(self.states_x[ind_infn] * self.param_gamma_im)
+        
+        # Transition 19 - Isolated[n_inf] to Recovery Immunized
+        self.expval.append(self.states_x[ind_ison] * self.param_gamma_im)
+        
+        # Transition 20 - Infected[n_inf] to Susceptible
+        self.expval.append(self.states_x[ind_infn] * \
+                          (1 - self.param_gamma_mor - self.param_gamma_im))
+            
+        # Transition 21 - Isolated[n_inf] to Susceptible
+        self.expval.append(self.states_x[ind_ison] * \
+                          (1 - self.param_gamma_mor - self.param_gamma_im))
+            
+        # Transition 22 - Infected[n_inf] to Dead
+        self.expval.append(self.states_x[ind_infn] * self.param_gamma_mor)
+        
+        # Transition 23 - Isolated[n_inf] to Dead
+        self.expval.append(self.states_x[ind_ison] * self.param_gamma_mor)
+        
+        # Randomly generate the transition value based on the expected value
+        np_expval = np.asarray(self.expval, dtype=np.float32)
+        dx = np.zeros(len(self.expval), dtype=np.float32)
+        for ind in range(len(self.expval)):
+            temp1 = np.ceil(np_expval[ind] * 10 + np.finfo(np.float32).eps)
+            dx[ind] = np.sum((np.random.uniform(low=0.0, high=1.0, size=int(temp1)) < 
+                             (np_expval[ind] / temp1)).astype(int))
+        
+        # Apply the changes for the transitions to the 
+        # corresponding source and destination states
+        for ind in range(len(self.expval)):
+            sind = self.source_ind[ind]
+            dind = self.dest_ind[ind]
+            
+            temp = self.states_x[sind] - dx[ind]
+            
+            if sind == 1:
+                self.states_x[sind] = temp
+                self.states_x[dind] = self.states_x[dind] + dx[ind]
+            elif temp <= 0:
+                self.states_x[dind] = self.states_x[dind] + self.states_x[sind]
+                self.states_x[sind] = 0
+            else:
+                self.states_x[sind] = temp 
+                self.states_x[dind] = self.states_x[dind] + dx[ind]
+        
+        self.states_dx = dx
+            
+        
                        
 def main():            
     node = Node()
@@ -364,8 +441,8 @@ def main():
     node.create_states()
     node.create_transitions()
     node.stoch_solver()
-    print(node.expval)
-    print(len(node.expval))
+    #print(node.expval)
+    #print(len(node.expval))
     #print(node.states_name)
     
 if __name__ == "__main__":
