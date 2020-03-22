@@ -149,8 +149,8 @@ class Node:
         # for fast processing
         self.states_x = np.asarray(self.states_x, dtype=np.float32)
         self.states_dx = np.zeros(self.states_x.shape, dtype=np.float32)
-        self.states_name = np.asarray(self.states_name, dtype=str)
-        self.states_type = np.asarray(self.states_type, dtype=str)
+        #self.states_name = np.asarray(self.states_name, dtype=str)
+        #self.states_type = np.asarray(self.states_type, dtype=str)
 
         # initialize number of states
         self.param_num_states = len(self.states_x)
@@ -169,7 +169,7 @@ class Node:
         # Transition 3 - Any State except Birth to Dead (Natural Mortality)
         for ind in range(count, n_st - 1):
             self.source.append(self.states_name[ind])
-            self.dest.append('Death')
+            self.dest.append('Dead')
             
         # Transition 4 - Susceptible to Vaccinated[1]
         if self.param_vr != 0:
@@ -265,14 +265,17 @@ class Node:
         self.dest.append('Dead')
         
         for ind in range(len(self.source)):
-            self.source_ind.append(self.source.index(self.source[ind]))
-            self.dest_ind.append(self.dest.index(self.dest[ind]))
+            self.source_ind.append(self.states_name.index(self.source[ind]))
+            self.dest_ind.append(self.states_name.index(self.dest[ind]))
 
-        print("[INFO] State transition was created...")            
+        print("[INFO] State transitions were created...")
+
+        
+    #def stoch_solver(self):
         
         
 node = Node()
 node.check_init()
 node.create_states()
 node.create_transitions()
-print(node.source)
+#print(node.source)
