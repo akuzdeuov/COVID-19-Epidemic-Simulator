@@ -33,9 +33,9 @@ class Node:
                                       # infection to the end of the infection state)
         self.param_t_vac = 3          # Vaccination immunization period (The time to 
                                       # vaccinatization immunization after being vaccinated)
-        self.param_n_exp = self.param_t_exp / self.param_dt
-        self.param_n_inf = self.param_t_inf / self.param_dt
-        self.param_n_vac = self.param_t_vac / self.param_dt
+        self.param_n_exp = int(self.param_t_exp / self.param_dt)
+        self.param_n_inf = int(self.param_t_inf / self.param_dt)
+        self.param_n_vac = int(self.param_t_vac / self.param_dt)
         
         self.param_save_res = 1
         self.param_disp_progress = 1
@@ -67,6 +67,9 @@ class Node:
         self.source_ind = []
         self.dest_ind = []
         
+        # Define transitions in stochastic solver
+        self.expval = []
+        
         
     def check_init(self):
         if self.param_beta_exp == 0 and self.param_beta_inf == 0:
@@ -80,11 +83,11 @@ class Node:
     def create_states(self):
         
         # create some temporal variables
-        n_vac = int(self.param_n_vac)
-        n_vac_exp = n_vac + int(self.param_n_exp)
-        n_vac_2exp = n_vac_exp + int(self.param_n_exp)
-        n_vac_2exp_inf = n_vac_2exp + int(self.param_n_inf)
-        n_vac_2exp_2inf = n_vac_2exp_inf + int(self.param_n_inf) + 1
+        n_vac = self.param_n_vac
+        n_vac_exp = n_vac + self.param_n_exp
+        n_vac_2exp = n_vac_exp + self.param_n_exp
+        n_vac_2exp_inf = n_vac_2exp + self.param_n_inf
+        n_vac_2exp_2inf = n_vac_2exp_inf + self.param_n_inf + 1
         count = len(self.states_name) - 1
         
         # loop to create states
@@ -162,9 +165,9 @@ class Node:
         # create some temporal variables
         count = len(self.source) - 1
         n_st = self.param_num_states 
-        n_vac = int(self.param_n_vac) 
-        n_exp = int(self.param_n_exp) 
-        n_inf = int(self.param_n_inf)
+        n_vac = self.param_n_vac
+        n_exp = self.param_n_exp
+        n_inf = self.param_n_inf
         
         # Transition 3 - Any State except Birth to Dead (Natural Mortality)
         for ind in range(count, n_st - 1):
@@ -271,11 +274,99 @@ class Node:
         print("[INFO] State transitions were created...")
 
         
-    #def stoch_solver(self):
+    def stoch_solver(self):
+        # define vectors of indices
+        ind_vac = np.zeros((len(self.states_x)), dtype=np.float32)
+        ind_inf = np.zeros((len(self.states_x)), dtype=np.float32)
+        ind_exp = np.zeros((len(self.states_x)), dtype=np.float32)
+        ind_iso = np.zeros((len(self.states_x)), dtype=np.float32)
+        ind_qua = np.zeros((len(self.states_x)), dtype=np.float32)
         
+        # intialize vectors of indices
+        for ind in range(len(self.states_name)):
+            if self.states_name[ind] == 'Vaccinated_{}'.format(self.param_n_vac):
+                ind_vac[ind] = 1
+            elif 'Infected_' in self.states_name[ind]:
+                ind_inf[ind] = 1
+            elif 'Exposed_' in self.states_name[ind]:
+                ind_exp[ind] = 1
+            elif 'Isolated_' in self.states_name[ind]:
+                ind_iso[ind] = 1
+            elif 'Quarantined_' in self.states_name[ind]:
+                ind_qua[ind] = 1
+                
+        # define other indices
+        ind_exp1 = self.states_name.index('Exposed_1')
+        ind_expn = self.states_name.index('Exposed_{}'.format(self.param_n_exp))
         
-node = Node()
-node.check_init()
-node.create_states()
-node.create_transitions()
-#print(node.source)
+        ind_qua1 = self.states_name.index('Quarantined_1')
+        ind_quan = self.states_name.index('Quarantined_{}'.format(self.param_n_exp))
+        
+        ind_iso1 = self.states_name.index('Isolated_1')
+        ind_ison = self.states_name.index('Isolated_{}'.format(self.param_n_inf))
+        
+        ind_inf1 = self.states_name.index('Infected_1')
+        ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
+                        
+        # Total population is the sum of all states except birth and death
+        total_pop = np.sum(self.states_x[1:-1])
+        
+        # Transition 1 - Birth to Susceptible
+        self.expval.append(total_pop * self.param_br * (1 - self.param_mir) * self.param_dt)
+        
+        # Transition 2 - Birth to Maternally Immunized
+        self.expval.append(total_pop * self.param_br * self.param_mir * self.param_dt)
+        
+        # Transition 3 - Any State except Birth to Dead (Natural Mortality)
+        for ind in range(1, self.param_num_states - 1):
+            self.expval.append(self.states_x[ind] * self.param_dr * self.param_dt)
+            
+        # Transition 4 - Susceptible to Vaccinated[1]
+        if self.param_vr != 0:
+            self.expval.append(self.states_x[1] * self.param_vr * self.param_dt)
+            
+        # Transition 5 - Vaccinated[i] to Vaccinated[i+1] until i+1 == n_vac
+        if self.param_n_vac != 0:
+            for ind in range(self.param_n_vac - 1):
+                self.expval.append(self.states_x[2 + ind] * (1 - self.param_dr * self.param_dt))
+                
+        # Transition 6 - Vaccinated[n_vac] to Vaccination_Immunized
+        # Transition 7 - Vaccinated[n_vac] to Susceptible
+        if self.param_vr != 0:
+            self.expval.append(np.sum(np.multiply(self.states_x, ind_vac)) * self.param_vir)
+            self.expval.append(np.sum(np.multiply(self.states_x, ind_vac)) * 
+                               (1 - self.param_dr * self.param_dt - self.param_vir))
+            
+        # Transition 8 - Susceptible to Exposed[1]
+        if self.param_n_exp != 0:
+            temp1 = np.sum(np.multiply(self.states_x, ind_inf)) + self.param_eps_exp * \
+            np.sum(np.multiply(self.states_x, ind_exp)) + self.param_eps_iso * \
+                np.sum(np.multiply(self.states_x, ind_iso)) + \
+            self.param_eps_qua * np.sum(np.multiply(self.states_x, ind_qua))
+            
+            self.expval.append(self.states_x[1] * temp1 * self.param_beta_exp * self.param_dt / total_pop)
+            
+        # Transition 9 - Susceptible to Infected[1]            
+        self.expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
+        
+        # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
+        for ind in range(self.param_n_exp - 1):
+            self.expval.append(self.states_x[ind_exp1 + ind -1] * \
+                (1 - self.param_dr * self.param_dt - self.param_qr * self.param_dt))
+                
+        # Transition 11 - Exposed[n_exp] to Infected[1]
+            
+            
+                       
+def main():            
+    node = Node()
+    node.check_init()
+    node.create_states()
+    node.create_transitions()
+    node.stoch_solver()
+    print(node.expval)
+    print(len(node.expval))
+    #print(node.states_name)
+    
+if __name__ == "__main__":
+    main()
