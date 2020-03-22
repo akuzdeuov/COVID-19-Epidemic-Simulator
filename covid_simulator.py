@@ -57,8 +57,15 @@ class Node:
         
         # Define states
         self.states_x = [0, self.init_susceptible]
+        self.states_dx = []
         self.states_name = ['Birth', 'Susceptible']
         self.states_type = ['Birth', 'Susceptible']
+        
+        # Define transitions
+        self.source = ['Birth', 'Birth']
+        self.dest = ['Susceptible', 'Maternally_Immunized' ]
+        self.source_ind = []
+        self.dest_ind = []
         
         
     def check_init(self):
@@ -67,7 +74,8 @@ class Node:
         elif self.param_beta_exp != 0 and self.param_beta_inf != 0:
             print('[ERROR] Both beta_exp and beta_inf cannot be non-zero.')
         else:
-            print("[INFO] Initialization was done properly.")
+            print("[INFO] Initialization was done properly!")
+            
             
     def create_states(self):
         
@@ -136,12 +144,135 @@ class Node:
         self.states_name.append('Dead')
         self.states_type.append('Dead')
         self.states_x.append(0)
+        
+        # convert states into numpy arrays
+        # for fast processing
+        self.states_x = np.asarray(self.states_x, dtype=np.float32)
+        self.states_dx = np.zeros(self.states_x.shape, dtype=np.float32)
+        self.states_name = np.asarray(self.states_name, dtype=str)
+        self.states_type = np.asarray(self.states_type, dtype=str)
 
         # initialize number of states
         self.param_num_states = len(self.states_x)
+        
+        print("[INFO] States were created...")
+        
+        
+    def create_transitions(self):
+        # create some temporal variables
+        count = len(self.source) - 1
+        n_st = self.param_num_states 
+        n_vac = int(self.param_n_vac) 
+        n_exp = int(self.param_n_exp) 
+        n_inf = int(self.param_n_inf)
+        
+        # Transition 3 - Any State except Birth to Dead (Natural Mortality)
+        for ind in range(count, n_st - 1):
+            self.source.append(self.states_name[ind])
+            self.dest.append('Death')
+            
+        # Transition 4 - Susceptible to Vaccinated[1]
+        if self.param_vr != 0:
+            self.source.append('Susceptible')
+            self.dest.append('Vaccinated_1')
+            
+        # Transition 5 - Vaccinated[i] to Vaccinated[i+1] until i+1 == n_vac
+        if self.param_n_vac != 0:
+            for ind in range(n_vac - 1):
+                self.source.append(self.states_name[2 + ind])
+                self.dest.append(self.states_name[3 + ind])
+                
+        if self.param_vr != 0:
+            # Transition 6 - Vaccinated[n_vac] to Vaccination_Immunized
+            self.source.append('Vaccinated_{}'.format(n_vac))
+            self.dest.append('Vaccination_Immunized')
+            
+            # Transition 7 - Vaccinated[n_vac] to Susceptible
+            self.source.append('Vaccinated_{}'.format(n_vac))
+            self.dest.append('Susceptible')
+            
+            # Transition 8 - Susceptible to Exposed[1]
+            if self.param_n_exp != 0:
+                self.source.append('Susceptible')
+                self.dest.append('Exposed_1')
+                
+            # Transition 9 - Susceptible to Infected[1]
+            self.source.append('Susceptible')
+            self.dest.append('Infected_1')
+            
+        # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
+        for ind in range(n_exp - 1):
+            self.source.append('Exposed_{}'.format(ind + 1))
+            self.dest.append('Exposed_{}'.format(ind + 2))
+            
+        # Transition 11 - Exposed[n_inc] to Infected[1]
+        if self.param_n_exp != 0:
+            self.source.append('Exposed_{}'.format(n_exp))
+            self.dest.append('Infected_1')
+            
+        # Transition 12 - Exposed[i] to Quarantined[i+1] until i+1 == n_exp
+        for ind in range(n_exp - 1):
+            self.source.append('Exposed_{}'.format(ind + 1))
+            self.dest.append('Quarantined_{}'.format(ind + 2))
+            
+        # Transition 13 - Quarantined[i] to Quarantined[i+1] until i+1 == n_exp
+        for ind in range(n_exp - 1):
+            self.source.append('Quarantined_{}'.format(ind + 1))
+            self.dest.append('Quarantined_{}'.format(ind + 2))
+            
+        # Transition 14 - Quarantined[n_exp] to Isolated[1]
+        if self.param_n_exp != 0:
+            self.source.append('Quarantined_{}'.format(n_exp))
+            self.dest.append('Isolated_1')
+        
+        # Transition 15 - Infected[i] to Infected[i+1] until i+1 == n_inf
+        for ind in range(n_inf - 1):
+            self.source.append('Infected_{}'.format(ind + 1))
+            self.dest.append('Infected_{}'.format(ind + 2))
+            
+        # Transition 16 - Isolated[i] to Isolated[i+1] until i+1 == n_inf
+        for ind in range(n_inf - 1):
+            self.source.append('Isolated_{}'.format(ind + 1))
+            self.dest.append('Isolated_{}'.format(ind + 2))
+            
+        # Transition 17 - Infected[i] to Isolated[i+1] until i+1 == n_inf
+        for ind in range(n_inf - 1):
+            self.source.append('Infected_{}'.format(ind + 1))
+            self.dest.append('Isolated_{}'.format(ind + 2))
+            
+        # Transition 18 - Infected[n_inf] to Recovery_Immunized
+        self.source.append('Infected_{}'.format(n_inf))
+        self.dest.append('Recovery_Immunized')
+        
+        # Transition 19 - Isolated[n_inf] to Recovery Immunized
+        self.source.append('Isolated_{}'.format(n_inf))
+        self.dest.append('Recovery_Immunized')
+        
+        # Transition 20 - Infected[n_inf] to Susceptible
+        self.source.append('Infected_{}'.format(n_inf))
+        self.dest.append('Susceptible')
+        
+        # Transition 21 - Isolated[n_inf] to Susceptible
+        self.source.append('Isolated_{}'.format(n_inf))
+        self.dest.append('Susceptible')
+        
+        # Transition 22 - Infected[n_inf] to Dead
+        self.source.append('Infected_{}'.format(n_inf))
+        self.dest.append('Dead')
+        
+        # Transition 23 - Isolated[n_inf] to Dead
+        self.source.append('Isolated_{}'.format(n_inf))
+        self.dest.append('Dead')
+        
+        for ind in range(len(self.source)):
+            self.source_ind.append(self.source.index(self.source[ind]))
+            self.dest_ind.append(self.dest.index(self.dest[ind]))
+
+        print("[INFO] State transition was created...")            
         
         
 node = Node()
 node.check_init()
 node.create_states()
-print(node.states_x)
+node.create_transitions()
+print(node.source)
