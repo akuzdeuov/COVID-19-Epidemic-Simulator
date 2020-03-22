@@ -1,4 +1,5 @@
-import numpy as np 
+import numpy as np
+import time 
 import matplotlib.pyplot as plt 
 
 
@@ -432,7 +433,7 @@ class Node:
                 self.states_x[dind] = self.states_x[dind] + dx[ind]
         
         self.states_dx = dx
-            
+        self.expval = []
         
                        
 def main():            
@@ -440,8 +441,14 @@ def main():
     node.check_init()
     node.create_states()
     node.create_transitions()
-    node.stoch_solver()
-    #print(node.expval)
+    
+    start = time.time()
+    for i in range(node.param_num_sim):
+        print("Iteration {}/{}".format(i + 1, node.param_num_sim))
+        node.stoch_solver()
+    end = time.time()
+        
+    print(end - start)
     #print(len(node.expval))
     #print(node.states_name)
     
