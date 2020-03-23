@@ -202,14 +202,14 @@ class Node:
             self.source.append('Vaccinated_{}'.format(n_vac))
             self.dest.append('Susceptible')
             
-            # Transition 8 - Susceptible to Exposed[1]
-            if self.param_n_exp != 0:
-                self.source.append('Susceptible')
-                self.dest.append('Exposed_1')
-                
-            # Transition 9 - Susceptible to Infected[1]
+        # Transition 8 - Susceptible to Exposed[1]
+        if self.param_n_exp != 0:
             self.source.append('Susceptible')
-            self.dest.append('Infected_1')
+            self.dest.append('Exposed_1')
+                
+        # Transition 9 - Susceptible to Infected[1]
+        self.source.append('Susceptible')
+        self.dest.append('Infected_1')
             
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
         for ind in range(n_exp - 1):
