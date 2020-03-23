@@ -347,43 +347,47 @@ class Node:
             
             self.expval.append(self.states_x[1] * temp1 * self.param_beta_exp * self.param_dt / total_pop)
             
-        # Transition 9 - Susceptible to Infected[1]            
+        # Transition 9 - Susceptible to Infected[1] 
+        temp1 = np.sum(np.multiply(self.states_x, ind_inf)) + self.param_eps_exp * \
+            np.sum(np.multiply(self.states_x, ind_exp)) + self.param_eps_iso * \
+                np.sum(np.multiply(self.states_x, ind_iso)) + \
+            self.param_eps_qua * np.sum(np.multiply(self.states_x, ind_qua))
         self.expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
         
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
         for ind in range(self.param_n_exp - 1):
-            self.expval.append(self.states_x[ind_exp1 + ind -1] * \
+            self.expval.append(self.states_x[ind_exp1 + ind] * \
                 (1 - self.param_dr * self.param_dt - self.param_qr * self.param_dt))
-                
+       
         # Transition 11 - Exposed[n_exp] to Infected[1]
         if self.param_n_exp != 0:
             self.expval.append(self.states_x[ind_expn] * (1 - self.param_dr * self.param_dt))
             
         # Transition 12 - Exposed[i] to Quarantined[i+1] until i+1 == n_exp
         for ind in range(self.param_n_exp - 1):
-            self.expval.append(self.states_x[ind_exp1 + ind - 1] * (self.param_dr * self.param_dt))
+            self.expval.append(self.states_x[ind_exp1 + ind] * (self.param_qr * self.param_dt))
             
         # Transition 13 - Quarantined[i] to Quarantined[i+1] until i+1 == n_exp
         for ind in range(self.param_n_exp - 1):
-            self.expval.append(self.states_x[ind_qua1 + ind - 1] * (1- self.param_dr * self.param_dt))
+            self.expval.append(self.states_x[ind_qua1 + ind] * (1 - self.param_dr * self.param_dt))
             
         # Transition 14 - Quarantined[n_exp] to Isolated[1]
         if self.param_n_exp != 0:
-            self.expval.append(self.states_x[ind_quan] * (1- self.param_dr * self.param_dt))
+            self.expval.append(self.states_x[ind_quan] * (1 - self.param_dr * self.param_dt))
             
         # Transition 15 - Infected[i] to Infected[i+1] until i+1 == n_inf
         for ind in range(self.param_n_inf - 1):
-            self.expval.append(self.states_x[ind_inf1 + ind - 1] * \
+            self.expval.append(self.states_x[ind_inf1 + ind] * \
                                (1 - self.param_dr * self.param_dt - self.param_ir * self.param_dt))
         
         # Transition 16 - Isolated[i] to Isolated[i+1] until i+1 == n_inf
         for ind in range(self.param_n_inf - 1):
-            self.expval.append(self.states_x[ind_iso1 + ind - 1] * \
+            self.expval.append(self.states_x[ind_iso1 + ind] * \
                                (1 - self.param_dr * self.param_dt))
                 
         # Transition 17 - Infected[i] to Isolated[i+1] until i+1 == n_inf
         for ind in range(self.param_n_inf - 1):
-            self.expval.append(self.states_x[ind_inf1 + ind - 1] * \
+            self.expval.append(self.states_x[ind_inf1 + ind] * \
                                (self.param_ir * self.param_dt))
         
         # Transition 18 - Infected[n_inf] to Recovery_Immunized
@@ -413,6 +417,8 @@ class Node:
             temp1 = np.ceil(np_expval[ind] * 10 + np.finfo(np.float32).eps)
             dx[ind] = np.sum((np.random.uniform(low=0.0, high=1.0, size=int(temp1)) < 
                              (np_expval[ind] / temp1)).astype(int))
+            #if dx[ind] > 0:
+                #print(ind, dx[ind])
         
         # Apply the changes for the transitions to the 
         # corresponding source and destination states
@@ -433,24 +439,88 @@ class Node:
                 self.states_x[dind] = self.states_x[dind] + dx[ind]
         
         self.states_dx = dx
+        #for ind in range(len(self.expval)):
+        #    if self.expval[ind] > 0:
+        #        print(self.expval[ind], ind)
+        
         self.expval = []
         
-                       
-def main():            
+
+def main():
+    # initialize a new node            
     node = Node()
+    
+    # check correctenes of the initialization 
     node.check_init()
+    
+    # create states based on the
+    # initialization parameters
     node.create_states()
+    
+    # create transitions based on 
+    # the created states
     node.create_transitions()
     
+    # create a containers to store states
+    states_arr = np.zeros((node.param_num_sim, len(node.states_name)), dtype=np.float32)
+    
     start = time.time()
-    for i in range(node.param_num_sim):
-        print("Iteration {}/{}".format(i + 1, node.param_num_sim))
+    for ind in range(node.param_num_sim):
+        states_arr[ind, :] = node.states_x
         node.stoch_solver()
-    end = time.time()
         
-    print(end - start)
-    #print(len(node.expval))
-    #print(node.states_name)
+        if ind % node.param_disp_interval == 0:
+            print("Iteration: {}/{}".format(ind + 1, node.param_num_sim))
+        
+    end = time.time()
+    print("Simulation took {} sec".format(end - start))
+    
+    if node.param_vis_on:
+        # define vectors of indices
+        ind_vac = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_inf = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_exp = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_iso = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_qua = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_imm = np.zeros((len(node.states_x)), dtype=np.float32)
+        ind_sus = np.zeros((len(node.states_x)), dtype=np.float32)
+        
+        # intialize vectors of indices
+        for ind in range(len(node.states_name)):
+            if node.states_name[ind] == 'Vaccinated_{}'.format(node.param_n_vac):
+                ind_vac[ind] = 1
+            elif 'Infected_' in node.states_name[ind]:
+                ind_inf[ind] = 1
+            elif 'Exposed_' in node.states_name[ind]:
+                ind_exp[ind] = 1
+            elif 'Isolated_' in node.states_name[ind]:
+                ind_iso[ind] = 1
+            elif 'Quarantined_' in node.states_name[ind]:
+                ind_qua[ind] = 1
+            elif 'Immunized' in node.states_type[ind]:
+                ind_imm[ind] = 1
+            elif 'Susceptible' in node.states_type[ind]:
+                ind_sus[ind] = 1
+                
+        time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
+        state_sus = states_arr.dot(ind_sus)
+        state_exp = states_arr.dot(ind_exp)
+        state_inf = states_arr.dot(ind_inf)
+        state_iso = states_arr.dot(ind_iso)
+        state_qua = states_arr.dot(ind_qua)
+        state_imm = states_arr.dot(ind_imm)
+        state_dea = states_arr[:, -1]
+        
+        plt.plot(time_arr, state_sus, label = 'Susceptible')
+        plt.plot(time_arr, state_exp, label = 'Exposed')
+        plt.plot(time_arr, state_qua, label = 'Quarantined')
+        plt.plot(time_arr, state_inf, label = 'Infected')
+        plt.plot(time_arr, state_iso, label = 'Isolated')
+        plt.plot(time_arr, state_imm, label = 'Immunized')
+        plt.plot(time_arr, state_dea, label = 'Dead')
+        plt.legend(loc="upper right")
+        plt.show()
+        
     
 if __name__ == "__main__":
     main()
