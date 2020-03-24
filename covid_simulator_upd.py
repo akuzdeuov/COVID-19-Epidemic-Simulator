@@ -5,6 +5,8 @@ Created on Tue Mar 24 12:32:39 2020
 
 @author: askat
 """
+from joblib import Parallel, delayed
+import multiprocessing
 import random
 import numpy as np
 import time 
@@ -79,6 +81,9 @@ class Node:
         self.dest = ['Susceptible', 'Maternally_Immunized' ]
         self.source_ind = []
         self.dest_ind = []
+        
+        # number of cores in cpu
+        self.num_cores = multiprocessing.cpu_count()
         
         
     def check_init(self):
@@ -236,7 +241,7 @@ class Node:
             self.source.append('Quarantined_{}'.format(ind + 1))
             self.dest.append('Quarantined_{}'.format(ind + 2))
             
-        # Transition 14 - Quarantined[n_exp] to Isolated[1]
+        # Transition 14 - Quarantined[n_exp] to Severe_Infected[1]
         if self.param_n_exp != 0:
             self.source.append('Quarantined_{}'.format(n_exp))
             self.dest.append('Severe_Infected_1')
@@ -246,12 +251,12 @@ class Node:
             self.source.append('Infected_{}'.format(ind + 1))
             self.dest.append('Infected_{}'.format(ind + 2))
             
-        # Transition 16 - Isolated[i] to Isolated[i+1] until i+1 == n_inf
+        # Transition 16 - Severe_Infected[i] to Severe_Infected[i+1] until i+1 == n_inf
         for ind in range(n_inf - 1):
             self.source.append('Severe_Infected_{}'.format(ind + 1))
             self.dest.append('Severe_Infected_{}'.format(ind + 2))
             
-        # Transition 17 - Infected[i] to Isolated[i+1] until i+1 == n_inf
+        # Transition 17 - Infected[i] to Severe_Infected[i+1] until i+1 == n_inf
         for ind in range(n_inf - 1):
             self.source.append('Infected_{}'.format(ind + 1))
             self.dest.append('Severe_Infected_{}'.format(ind + 2))
@@ -260,7 +265,7 @@ class Node:
         self.source.append('Infected_{}'.format(n_inf))
         self.dest.append('Recovery_Immunized')
         
-        # Transition 19 - Isolated[n_inf] to Recovery Immunized
+        # Transition 19 - Severe_Infected[n_inf] to Recovery Immunized
         self.source.append('Severe_Infected_{}'.format(n_inf))
         self.dest.append('Recovery_Immunized')
         
@@ -268,7 +273,7 @@ class Node:
         self.source.append('Infected_{}'.format(n_inf))
         self.dest.append('Susceptible')
         
-        # Transition 21 - Isolated[n_inf] to Susceptible
+        # Transition 21 - Severe_Infected[n_inf] to Susceptible
         self.source.append('Severe_Infected_{}'.format(n_inf))
         self.dest.append('Susceptible')
         
@@ -276,7 +281,7 @@ class Node:
         self.source.append('Infected_{}'.format(n_inf))
         self.dest.append('Dead')
         
-        # Transition 23 - Isolated[n_inf] to Dead
+        # Transition 23 - Severe_Infected[n_inf] to Dead
         self.source.append('Severe_Infected_{}'.format(n_inf))
         self.dest.append('Dead')
         
@@ -326,17 +331,19 @@ class Node:
         
         self.ind_inf1 = self.states_name.index('Infected_1')
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
-        
+    
         
     def dx_generator(self, size, val):
         dx = 0
+      
         for ind in range(size):
             rand_num = random.uniform(0, 1)
             if rand_num < val:
                 dx += 1
+    
         return dx
     
-        
+    
     def stoch_solver(self):
         # define a list to store transitions
         expval = []
@@ -351,19 +358,17 @@ class Node:
         expval.append(total_pop * self.param_br * self.param_mir * self.param_dt)
         
         # Transition 3 - Any State except Birth to Dead (Natural Mortality)
-        #expval += [self.states_x[ind] * self.param_dr * self.param_dt for ind in range(1, self.param_num_states - 1)]
-        for ind in range(1, self.param_num_states - 1):
-            expval.append(self.states_x[ind] * self.param_dr * self.param_dt)
-        
+        expval += (self.states_x[1:self.param_num_states - 1] * self.param_dr * self.param_dt).tolist()
+   
         # Transition 4 - Susceptible to Vaccinated[1]
         if self.param_vr != 0:
             expval.append(self.states_x[1] * self.param_vr * self.param_dt)
             
         # Transition 5 - Vaccinated[i] to Vaccinated[i+1] until i+1 == n_vac
         if self.param_n_vac != 0:
-            for ind in range(self.param_n_vac - 1):
-                expval.append(self.states_x[2 + ind] * (1 - self.param_dr * self.param_dt))
-                
+            expval += (self.states_x[2:self.param_n_vac + 1] * \
+                   (1 - self.param_dr * self.param_dt)).tolist()
+
         # Transition 6 - Vaccinated[n_vac] to Vaccination_Immunized
         # Transition 7 - Vaccinated[n_vac] to Susceptible
         if self.param_vr != 0:
@@ -383,52 +388,48 @@ class Node:
         expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
         
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
-        for ind in range(self.param_n_exp - 1):
-            expval.append(self.states_x[self.ind_exp1 + ind] * \
-                (1 - self.param_dr * self.param_dt - self.param_qr * self.param_dt))
-       
+        expval += (self.states_x[self.ind_exp1:self.ind_exp1 + self.param_n_exp - 1] * \
+                   (1 - self.param_dr * self.param_dt - self.param_qr * self.param_dt)).tolist()
+
         # Transition 11 - Exposed[n_exp] to Infected[1]
         if self.param_n_exp != 0:
             expval.append(self.states_x[self.ind_expn] * (1 - self.param_dr * self.param_dt))
             
         # Transition 12 - Exposed[i] to Quarantined[i+1] until i+1 == n_exp
-        for ind in range(self.param_n_exp - 1):
-            expval.append(self.states_x[self.ind_exp1 + ind] * (self.param_qr * self.param_dt))
-            
+        expval += (self.states_x[self.ind_exp1:self.ind_exp1 + self.param_n_exp - 1] * \
+                  (self.param_qr * self.param_dt)).tolist()
+
         # Transition 13 - Quarantined[i] to Quarantined[i+1] until i+1 == n_exp
-        for ind in range(self.param_n_exp - 1):
-            expval.append(self.states_x[self.ind_qua1 + ind] * (1 - self.param_dr * self.param_dt))
-            
-        # Transition 14 - Quarantined[n_exp] to Isolated[1]
+        expval += (self.states_x[self.ind_qua1:self.ind_qua1 + self.param_n_exp - 1] * \
+                   (1 - self.param_dr * self.param_dt)).tolist()
+
+        # Transition 14 - Quarantined[n_exp] to Severe_Infected[1]
         if self.param_n_exp != 0:
             expval.append(self.states_x[self.ind_quan] * (1 - self.param_dr * self.param_dt))
             
         # Transition 15 - Infected[i] to Infected[i+1] until i+1 == n_inf
-        for ind in range(self.param_n_inf - 1):
-            expval.append(self.states_x[self.ind_inf1 + ind] * \
-                               (1 - self.param_dr * self.param_dt - self.param_sir * self.param_dt))
-        
-        # Transition 16 - Isolated[i] to Isolated[i+1] until i+1 == n_inf
-        for ind in range(self.param_n_inf - 1):
-            expval.append(self.states_x[self.ind_sin1 + ind] * \
-                               (1 - self.param_dr * self.param_dt))
-                
-        # Transition 17 - Infected[i] to Isolated[i+1] until i+1 == n_inf
-        for ind in range(self.param_n_inf - 1):
-            expval.append(self.states_x[self.ind_inf1 + ind] * \
-                               (self.param_sir * self.param_dt))
-        
+        expval += (self.states_x[self.ind_inf1:self.ind_inf1 + self.param_n_inf - 1] * \
+                   (1 - self.param_dr * self.param_dt - self.param_sir * self.param_dt)).tolist()
+     
+        # Transition 16 - Severe_Infected[i] to Severe_Infected[i+1] until i+1 == n_inf
+        expval += (self.states_x[self.ind_sin1:self.ind_sin1 + self.param_n_inf - 1] * \
+                   (1 - self.param_dr * self.param_dt)).tolist()
+         
+        # Transition 17 - Infected[i] to Severe_Infected[i+1] until i+1 == n_inf
+        expval += (self.states_x[self.ind_inf1:self.ind_inf1 + self.param_n_inf - 1] * \
+                   (self.param_sir * self.param_dt)).tolist()
+
         # Transition 18 - Infected[n_inf] to Recovery_Immunized
         expval.append(self.states_x[self.ind_infn] * self.param_gamma_im)
         
-        # Transition 19 - Isolated[n_inf] to Recovery Immunized
+        # Transition 19 - Severe_Infected[n_inf] to Recovery Immunized
         expval.append(self.states_x[self.ind_sinn] * self.param_gamma_im)
         
         # Transition 20 - Infected[n_inf] to Susceptible
         expval.append(self.states_x[self.ind_infn] * \
                           (1 - self.param_gamma_mor - self.param_gamma_im))
             
-        # Transition 21 - Isolated[n_inf] to Susceptible
+        # Transition 21 - Severe_Infected[n_inf] to Susceptible
         states_sin = self.states_x.dot(self.ind_sin).sum()
         if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] * \
@@ -440,7 +441,7 @@ class Node:
         # Transition 22 - Infected[n_inf] to Dead
         expval.append(self.states_x[self.ind_infn] * self.param_gamma_mor)
         
-        # Transition 23 - Isolated[n_inf] to Dead
+        # Transition 23 - Severe_Infected[n_inf] to Dead
         if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] *self.param_gamma_mor1) 
         else:
@@ -469,13 +470,11 @@ class Node:
                 self.states_x[sind] = temp 
                 self.states_x[dind] += dx
         
-        #self.states_dx = dx
-   
 
 def main():
     # initialize a new node            
     node = Node()
-    
+        
     # check correctenes of the initialization 
     if node.check_init():
         # create states based on the
