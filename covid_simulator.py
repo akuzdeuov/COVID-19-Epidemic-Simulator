@@ -509,6 +509,8 @@ def main():
         plt.plot(time_arr, state_iso, label = 'Isolated')
         plt.plot(time_arr, state_imm, label = 'Immunized')
         plt.plot(time_arr, state_dea, label = 'Dead')
+        plt.xlabel("Day")
+        plt.ylabel("Population")
         plt.legend(loc="upper right")
         plt.show()
         
