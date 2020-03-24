@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 23 21:41:10 2020
+Created on Tue Mar 24 12:32:39 2020
 
 @author: askat
 """
-
-
-import numpy as np
+import random
 import time 
+import numpy as np
 import matplotlib.pyplot as plt 
 
 
@@ -48,12 +47,11 @@ class Node:
                                       # infection to the end of the infection state)
         self.param_t_vac = 3          # Vaccination immunization period (The time to 
                                       # vaccinatization immunization after being vaccinated)
-        self.param_n_exp = int(self.param_t_exp / self.param_dt)
-        self.param_n_inf = int(self.param_t_inf / self.param_dt)
-        self.param_n_vac = int(self.param_t_vac / self.param_dt)
         
-        self.param_save_res = 1
-        self.param_disp_progress = 1
+        self.param_n_exp = int(self.param_t_exp / self.param_dt) 
+        self.param_n_inf = int(self.param_t_inf / self.param_dt) 
+        self.param_n_vac = int(self.param_t_vac / self.param_dt) 
+        
         self.param_disp_interval = 100
         self.param_vis_on = 1                  # Visualize results after simulation
         
@@ -329,12 +327,22 @@ class Node:
         self.ind_inf1 = self.states_name.index('Infected_1')
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
         
+        
+    def dx_generator(self, size, val):
+        dx = 0
+        for ind in range(size):
+            rand_num = random.uniform(0, 1)
+            if rand_num < val:
+                dx += 1
+        return dx
+    
+        
     def stoch_solver(self):
         # define a list to store transitions
         expval = []
                                 
         # Total population is the sum of all states except birth and death
-        total_pop = np.sum(self.states_x[1:-1])
+        total_pop = self.states_x[1:-1].sum()
         
         # Transition 1 - Birth to Susceptible
         expval.append(total_pop * self.param_br * (1 - self.param_mir) * self.param_dt)
@@ -358,24 +366,24 @@ class Node:
         # Transition 6 - Vaccinated[n_vac] to Vaccination_Immunized
         # Transition 7 - Vaccinated[n_vac] to Susceptible
         if self.param_vr != 0:
-            expval.append(np.sum(self.states_x.dot(self.ind_vac)) * self.param_vir)
-            expval.append(np.sum(self.states_x.dot(self.ind_vac)) * 
+            expval.append(self.states_x.dot(self.ind_vac).sum() * self.param_vir)
+            expval.append(self.states_x.dot(self.ind_vac).sum() * 
                                (1 - self.param_dr * self.param_dt - self.param_vir))
             
         # Transition 8 - Susceptible to Exposed[1]
         if self.param_n_exp != 0:
-            temp1 = np.sum(self.states_x.dot(self.ind_inf)) + self.param_eps_exp * \
-            np.sum(self.states_x.dot(self.ind_exp)) + self.param_eps_sev * \
-                np.sum(self.states_x.dot(self.ind_sin)) + \
-            self.param_eps_qua * np.sum(self.states_x.dot(self.ind_qua))
+            temp1 = self.states_x.dot(self.ind_inf).sum() + self.param_eps_exp * \
+            self.states_x.dot(self.ind_exp).sum() + self.param_eps_sev * \
+                self.states_x.dot(self.ind_sin).sum() + \
+            self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
             
             expval.append(self.states_x[1] * temp1 * self.param_beta_exp * self.param_dt / total_pop)
             
         # Transition 9 - Susceptible to Infected[1] 
-        temp1 = np.sum(self.states_x.dot(self.ind_inf)) + self.param_eps_exp * \
-            np.sum(self.states_x.dot(self.ind_exp)) + self.param_eps_sev * \
-                np.sum(self.states_x.dot(self.ind_sin)) + \
-            self.param_eps_qua * np.sum(self.states_x.dot(self.ind_qua))
+        temp1 = self.states_x.dot(self.ind_inf).sum() + self.param_eps_exp * \
+            self.states_x.dot(self.ind_exp).sum() + self.param_eps_sev * \
+                self.states_x.dot(self.ind_sin).sum() + \
+            self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
         expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
         
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
@@ -425,7 +433,7 @@ class Node:
                           (1 - self.param_gamma_mor - self.param_gamma_im))
             
         # Transition 21 - Isolated[n_inf] to Susceptible
-        if np.sum(self.states_x.dot(self.ind_sin)) < self.param_hosp_capacity:
+        if self.states_x.dot(self.ind_sin).sum() < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] * \
                           (1 - self.param_gamma_mor1 - self.param_gamma_im))
         else:
@@ -436,7 +444,7 @@ class Node:
         expval.append(self.states_x[self.ind_infn] * self.param_gamma_mor)
         
         # Transition 23 - Isolated[n_inf] to Dead
-        if np.sum(self.states_x.dot(self.ind_sin)) < self.param_hosp_capacity:
+        if self.states_x.dot(self.ind_sin).sum() < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] *self.param_gamma_mor1) 
         else:
             expval.append(self.states_x[self.ind_sinn] *self.param_gamma_mor2)
@@ -444,39 +452,30 @@ class Node:
         # Randomly generate the transition value based on the expected value
         dx = np.zeros(len(expval), dtype=np.float32)
 
-        for ind in range(len(expval)):
-            if expval[ind] < 10:
-                temp1 = np.ceil(expval[ind] * 10 + np.finfo(np.float32).eps)
-                dx[ind] = np.sum((np.random.uniform(low=0.0, high=1.0, size=int(temp1)) < 
-                             (expval[ind] / temp1)).astype(int))
+        for eval, sind, dind in zip(expval, self.source_ind, self.dest_ind):
+            if eval < 10:
+                temp1 = int(np.ceil(eval * 10 + np.finfo(np.float32).eps))
+                temp2 = eval/temp1
+                dx = self.dx_generator(temp1, temp2)
             else:
-                dx[ind] = round(expval[ind])
-            #if dx[ind] > 0:
-                #print(ind, dx[ind])
-        
-        # Apply the changes for the transitions to the 
-        # corresponding source and destination states
-        for ind in range(len(expval)):
-            sind = self.source_ind[ind]
-            dind = self.dest_ind[ind]
-            
-            temp = self.states_x[sind] - dx[ind]
+                dx = round(eval)
+     
+            # Apply the changes for the transitions to the 
+            # corresponding source and destination states     
+            temp = self.states_x[sind] - dx
             
             if sind == 1:
                 self.states_x[sind] = temp
-                self.states_x[dind] = self.states_x[dind] + dx[ind]
+                self.states_x[dind] = self.states_x[dind] + dx
             elif temp <= 0:
                 self.states_x[dind] = self.states_x[dind] + self.states_x[sind]
                 self.states_x[sind] = 0
             else:
                 self.states_x[sind] = temp 
-                self.states_x[dind] = self.states_x[dind] + dx[ind]
+                self.states_x[dind] = self.states_x[dind] + dx
         
-        self.states_dx = dx
-        #for ind in range(len(self.expval)):
-        #    if self.expval[ind] > 0:
-        #        print(self.expval[ind], ind)
-    
+        #self.states_dx = dx
+   
 
 def main():
     # initialize a new node            
@@ -503,11 +502,11 @@ def main():
             node.stoch_solver()
             
             if ind % node.param_disp_interval == 0:
-                print("Iteration: {}/{}".format(ind + 1, node.param_num_sim))
+                end = time.time()
+                print("Sim.time: {:.4f} sec, Iteration: {}/{}".format(end - start, ind + 1, node.param_num_sim))
         
-        end = time.time()
-        print("Simulation took {} sec".format(end - start))
-    
+        # if visualization is enabled
+        # then show plot states
         if node.param_vis_on:
                 
             time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
