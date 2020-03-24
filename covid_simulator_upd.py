@@ -86,10 +86,13 @@ class Node:
     def check_init(self):
         if self.param_beta_exp == 0 and self.param_beta_inf == 0:
             print('[ERROR] Both beta_exp and beta_inf cannot be zero.')
+            return 0
         elif self.param_beta_exp != 0 and self.param_beta_inf != 0:
             print('[ERROR] Both beta_exp and beta_inf cannot be non-zero.')
+            return 0
         else:
             print("[INFO] Initialization was done properly!")
+            return 1
             
             
     def create_states(self):
@@ -480,53 +483,53 @@ def main():
     node = Node()
     
     # check correctenes of the initialization 
-    node.check_init()
-    
-    # create states based on the
-    # initialization parameters
-    node.create_states()
-    node.indexes()
-    # create transitions based on 
-    # the created states
-    node.create_transitions()
-    
-    # create a containers to store states
-    states_arr = np.zeros((node.param_num_sim, len(node.states_name)), dtype=np.float32)
-    
-    start = time.time()
-    # start simulation
-    for ind in range(node.param_num_sim):
-        states_arr[ind, :] = node.states_x
-        node.stoch_solver()
+    if node.check_init():
+        # create states based on the
+        # initialization parameters
+        node.create_states()
+        node.indexes()
         
-        if ind % node.param_disp_interval == 0:
-            print("Iteration: {}/{}".format(ind + 1, node.param_num_sim))
-        
-    end = time.time()
-    print("Simulation took {} sec".format(end - start))
+        # create transitions based on 
+        # the created states
+        node.create_transitions()
     
-    if node.param_vis_on:
+        # create a container to store states
+        states_arr = np.zeros((node.param_num_sim, len(node.states_name)), dtype=np.float32)
+    
+        start = time.time()
+        # start simulation
+        for ind in range(node.param_num_sim):
+            states_arr[ind, :] = node.states_x
+            node.stoch_solver()
+            
+            if ind % node.param_disp_interval == 0:
+                print("Iteration: {}/{}".format(ind + 1, node.param_num_sim))
+        
+        end = time.time()
+        print("Simulation took {} sec".format(end - start))
+    
+        if node.param_vis_on:
                 
-        time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
-        state_sus = states_arr.dot(node.ind_sus)
-        state_exp = states_arr.dot(node.ind_exp)
-        state_inf = states_arr.dot(node.ind_inf)
-        state_sin = states_arr.dot(node.ind_sin)
-        state_qua = states_arr.dot(node.ind_qua)
-        state_imm = states_arr.dot(node.ind_imm)
-        state_dea = states_arr[:, -1]
+            time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
+            state_sus = states_arr.dot(node.ind_sus)
+            state_exp = states_arr.dot(node.ind_exp)
+            state_inf = states_arr.dot(node.ind_inf)
+            state_sin = states_arr.dot(node.ind_sin)
+            state_qua = states_arr.dot(node.ind_qua)
+            state_imm = states_arr.dot(node.ind_imm)
+            state_dea = states_arr[:, -1]
         
-        plt.plot(time_arr, state_sus, label = 'Susceptible')
-        plt.plot(time_arr, state_exp, label = 'Exposed')
-        plt.plot(time_arr, state_qua, label = 'Quarantined')
-        plt.plot(time_arr, state_inf, label = 'Infected')
-        plt.plot(time_arr, state_sin, label = 'Severe Infected')
-        plt.plot(time_arr, state_imm, label = 'Immunized')
-        plt.plot(time_arr, state_dea, label = 'Dead')
-        plt.xlabel("Day")
-        plt.ylabel("Population")
-        plt.legend(loc="upper right")
-        plt.show()
+            plt.plot(time_arr, state_sus, label = 'Susceptible')
+            plt.plot(time_arr, state_exp, label = 'Exposed')
+            plt.plot(time_arr, state_qua, label = 'Quarantined')
+            plt.plot(time_arr, state_inf, label = 'Infected')
+            plt.plot(time_arr, state_sin, label = 'Severe Infected')
+            plt.plot(time_arr, state_imm, label = 'Immunized')
+            plt.plot(time_arr, state_dea, label = 'Dead')
+            plt.xlabel("Day")
+            plt.ylabel("Population")
+            plt.legend(loc="upper right")
+            plt.show()
         
     
 if __name__ == "__main__":
