@@ -6,8 +6,8 @@ Created on Tue Mar 24 12:32:39 2020
 @author: askat
 """
 import random
-import time 
 import numpy as np
+import time 
 import matplotlib.pyplot as plt 
 
 
@@ -351,9 +351,10 @@ class Node:
         expval.append(total_pop * self.param_br * self.param_mir * self.param_dt)
         
         # Transition 3 - Any State except Birth to Dead (Natural Mortality)
+        #expval += [self.states_x[ind] * self.param_dr * self.param_dt for ind in range(1, self.param_num_states - 1)]
         for ind in range(1, self.param_num_states - 1):
             expval.append(self.states_x[ind] * self.param_dr * self.param_dt)
-            
+        
         # Transition 4 - Susceptible to Vaccinated[1]
         if self.param_vr != 0:
             expval.append(self.states_x[1] * self.param_vr * self.param_dt)
@@ -366,24 +367,19 @@ class Node:
         # Transition 6 - Vaccinated[n_vac] to Vaccination_Immunized
         # Transition 7 - Vaccinated[n_vac] to Susceptible
         if self.param_vr != 0:
-            expval.append(self.states_x.dot(self.ind_vac).sum() * self.param_vir)
-            expval.append(self.states_x.dot(self.ind_vac).sum() * 
-                               (1 - self.param_dr * self.param_dt - self.param_vir))
+            state_vac = self.states_x.dot(self.ind_vac).sum()
+            expval.append(state_vac * self.param_vir)
+            expval.append(state_vac * (1 - self.param_dr * self.param_dt - self.param_vir))
             
         # Transition 8 - Susceptible to Exposed[1]
-        if self.param_n_exp != 0:
-            temp1 = self.states_x.dot(self.ind_inf).sum() + self.param_eps_exp * \
-            self.states_x.dot(self.ind_exp).sum() + self.param_eps_sev * \
-                self.states_x.dot(self.ind_sin).sum() + \
-            self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
+        temp1 = self.states_x.dot(self.ind_inf).sum() + self.param_eps_exp * \
+                self.states_x.dot(self.ind_exp).sum() + self.param_eps_sev * \
+                self.states_x.dot(self.ind_sin).sum() + self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
             
+        if self.param_n_exp != 0:
             expval.append(self.states_x[1] * temp1 * self.param_beta_exp * self.param_dt / total_pop)
             
         # Transition 9 - Susceptible to Infected[1] 
-        temp1 = self.states_x.dot(self.ind_inf).sum() + self.param_eps_exp * \
-            self.states_x.dot(self.ind_exp).sum() + self.param_eps_sev * \
-                self.states_x.dot(self.ind_sin).sum() + \
-            self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
         expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
         
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
@@ -433,7 +429,8 @@ class Node:
                           (1 - self.param_gamma_mor - self.param_gamma_im))
             
         # Transition 21 - Isolated[n_inf] to Susceptible
-        if self.states_x.dot(self.ind_sin).sum() < self.param_hosp_capacity:
+        states_sin = self.states_x.dot(self.ind_sin).sum()
+        if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] * \
                           (1 - self.param_gamma_mor1 - self.param_gamma_im))
         else:
@@ -444,14 +441,12 @@ class Node:
         expval.append(self.states_x[self.ind_infn] * self.param_gamma_mor)
         
         # Transition 23 - Isolated[n_inf] to Dead
-        if self.states_x.dot(self.ind_sin).sum() < self.param_hosp_capacity:
+        if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] *self.param_gamma_mor1) 
         else:
             expval.append(self.states_x[self.ind_sinn] *self.param_gamma_mor2)
         
         # Randomly generate the transition value based on the expected value
-        dx = np.zeros(len(expval), dtype=np.float32)
-
         for eval, sind, dind in zip(expval, self.source_ind, self.dest_ind):
             if eval < 10:
                 temp1 = int(np.ceil(eval * 10 + np.finfo(np.float32).eps))
@@ -466,13 +461,13 @@ class Node:
             
             if sind == 1:
                 self.states_x[sind] = temp
-                self.states_x[dind] = self.states_x[dind] + dx
+                self.states_x[dind] += dx
             elif temp <= 0:
-                self.states_x[dind] = self.states_x[dind] + self.states_x[sind]
+                self.states_x[dind] += self.states_x[sind]
                 self.states_x[sind] = 0
             else:
                 self.states_x[sind] = temp 
-                self.states_x[dind] = self.states_x[dind] + dx
+                self.states_x[dind] += dx
         
         #self.states_dx = dx
    
