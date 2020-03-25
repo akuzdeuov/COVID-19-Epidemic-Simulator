@@ -14,11 +14,17 @@ The simulator capable of simulating SEQISR (susceptible, exposed, quarantined, i
 
 **How to install?**
 
- pip install -e /path/to/setup/folder
+Download and unzip files, or just simply clone files. 
+Then type the following command on your terminal: 
+
+ pip install -e /path/to/folder/setup.py 
  
  **How to run?**
  
  Open the terminal and insert the following command: covid19_simulator
+ 
+ **Output**
+ ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
  
  **How to create .exe file from .py file?**
  
