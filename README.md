@@ -24,6 +24,7 @@ Then type the following command on your terminal:
  Open the terminal and insert the following command: covid19_simulator
  
  **Output**
+ 
  ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
  
  **How to create .exe file from .py file?**
