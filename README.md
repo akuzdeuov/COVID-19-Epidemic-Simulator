@@ -17,11 +17,13 @@ The simulator capable of simulating SEQISR (susceptible, exposed, quarantined, i
 Download and unzip files, or just simply clone files. 
 Then type the following command on your terminal: 
 
- pip install -e /path/to/folder/setup.py 
+ **pip install -e /path/to/folder/setup.py** 
  
  **How to run?**
  
- Open the terminal and insert the following command: covid19_simulator
+ Open the terminal and insert the following command: 
+ 
+ **covid19_simulator**
  
  **Output**
  
