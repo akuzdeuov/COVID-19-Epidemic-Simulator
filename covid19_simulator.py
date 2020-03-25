@@ -48,9 +48,9 @@ class Node:
         self.param_t_vac = 3          # Vaccination immunization period (The time to 
                                       # vaccinatization immunization after being vaccinated)
         
-        self.param_n_exp = int(self.param_t_exp / self.param_dt) 
-        self.param_n_inf = int(self.param_t_inf / self.param_dt) 
-        self.param_n_vac = int(self.param_t_vac / self.param_dt) 
+        self.param_n_exp = round(self.param_t_exp / self.param_dt) 
+        self.param_n_inf = round(self.param_t_inf / self.param_dt) 
+        self.param_n_vac = round(self.param_t_vac / self.param_dt) 
         
         self.param_disp_interval = 100
         self.param_vis_on = 1                  # Visualize results after simulation
@@ -160,6 +160,8 @@ class Node:
         self.states_name.append('Dead')
         self.states_type.append('Dead')
         self.states_x.append(0)
+        
+        #print(self.states_name)
         
         # convert states into numpy arrays
         # for fast processing
@@ -301,12 +303,13 @@ class Node:
         for ind in range(len(self.states_name)):
             if self.states_name[ind] == 'Vaccinated_{}'.format(self.param_n_vac):
                 self.ind_vac[ind] = 1
-            elif 'Infected_' in self.states_name[ind]:
+            elif 'Infected_' in self.states_name[ind] and not 'Severe_Infected_' in self.states_name[ind]:
                 self.ind_inf[ind] = 1
             elif 'Exposed_' in self.states_name[ind]:
                 self.ind_exp[ind] = 1
             elif 'Severe_Infected_' in self.states_name[ind]:
                 self.ind_sin[ind] = 1
+                #print(self.states_name[ind])
             elif 'Quarantined_' in self.states_name[ind]:
                 self.ind_qua[ind] = 1
             elif 'Immunized' in self.states_type[ind]:
@@ -326,6 +329,7 @@ class Node:
         
         self.ind_inf1 = self.states_name.index('Infected_1')
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
+        
     
         
     def dx_generator(self, size, val):
@@ -427,6 +431,7 @@ class Node:
             
         # Transition 21 - Severe_Infected[n_inf] to Susceptible
         states_sin = self.states_x.dot(self.ind_sin).sum()
+        
         if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] * \
                           (1 - self.param_gamma_mor1 - self.param_gamma_im))
@@ -498,7 +503,7 @@ def main():
         # if visualization is enabled
         # then show plot states
         if node.param_vis_on:
-                
+            # extract all states from states array    
             time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
             state_sus = states_arr.dot(node.ind_sus)
             state_exp = states_arr.dot(node.ind_exp)
@@ -508,16 +513,27 @@ def main():
             state_imm = states_arr.dot(node.ind_imm)
             state_dea = states_arr[:, -1]
         
-            plt.plot(time_arr, state_sus, label = 'Susceptible')
-            plt.plot(time_arr, state_exp, label = 'Exposed')
-            plt.plot(time_arr, state_qua, label = 'Quarantined')
-            plt.plot(time_arr, state_inf, label = 'Infected')
-            plt.plot(time_arr, state_sin, label = 'Severe Infected')
-            plt.plot(time_arr, state_imm, label = 'Immunized')
-            plt.plot(time_arr, state_dea, label = 'Dead')
-            plt.xlabel("Day")
-            plt.ylabel("Population")
-            plt.legend(loc="upper right")
+            fig, ax = plt.subplots(figsize=(8,4))
+            ax.plot(time_arr, state_sus, linewidth=1, color='dodgerblue', label = 'Susceptible')
+            ax.plot(time_arr, state_exp, linewidth=1, color='lime', linestyle = ':',  label = 'Exposed')
+            ax.plot(time_arr, state_qua, linewidth=1, color='fuchsia', linestyle = '-.', label = 'Quarantined')
+            ax.plot(time_arr, state_inf, linewidth=1, color='navy', linestyle = '--', label = 'Infected')
+            ax.plot(time_arr, state_sin, linewidth=1, color='r', linestyle = '--', label = 'Severe Infected')
+            ax.plot(time_arr, state_imm, linewidth=1, color='cyan', label = 'Immunized')
+            ax.plot(time_arr, state_dea, linewidth=1, color='k', label = 'Dead')
+            plt.ylim(0,node.init_susceptible)
+            plt.xlim(0,node.param_sim_len)
+            ax.grid(linestyle=':', linewidth=1)
+            plt.ylabel("Population", fontsize=18)
+            plt.legend(loc="upper right", ncol=1)
+            
+            ax2 = plt.axes([0.125, -0.2, 0.778, 0.2])
+            ax2.plot(time_arr, state_sin, linewidth=1, color='r', linestyle = '--', label = 'Severe Infected')
+            ax2.plot(time_arr, np.ones(node.param_num_sim) * node.param_hosp_capacity, linewidth=1, color='lime', label = 'Hospital Capacity')
+            ax2.plot(time_arr, state_dea, linewidth=1, color='k', label = 'Dead')
+            plt.xlabel("Day", fontsize=18)
+            plt.legend(loc="upper left", ncol=1)
+            ax2.grid(linestyle=':', linewidth=1)
             plt.show()
         
     
