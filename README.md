@@ -8,4 +8,7 @@ https://ieeexplore.ieee.org/document/7591271
 3. Matplotlib
 
 **How to install?**
- pip install -e /path/to/setup/folder
+ - pip install -e /path/to/setup/folder
+
+**Algorithm Pipeline**
+![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/covid_epidemic_statechart_hav2.png)
