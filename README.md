@@ -32,7 +32,7 @@ Then type the following command on your terminal:
  **How to create .exe file from .py file?**
  1. Install Pyinstaller if you don't have it: *sudo pip3 install Pyinstaller*
  2. *pyinstaller --onefile covid19_simulator.py*
- 3. The previous command generates two folders: **_build_** and **_dist_**. The generated **_covid19_simulator.exe_** is in the **_dist_** file. To execute this file: *./covid19_simulator.exe*
+ 3. The previous command generates two folders: **_build_** and **_dist_**. The generated **_covid19_simulator.exe_** is inside **_dist_** folder. To execute this file: *./covid19_simulator.exe*
  
  https://www.youtube.com/watch?v=RM0K6Kq-Yho 
 
