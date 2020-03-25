@@ -30,6 +30,8 @@ Then type the following command on your terminal:
  ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
  
  **How to create .exe file from .py file?**
+ 1. Install Pyinstaller if you don't have it: 'sudo pip3 install Pyinstaller'
+ 2. 'pyinstaller --onefile covid19_simulator.py'
  
  https://www.youtube.com/watch?v=RM0K6Kq-Yho 
 
