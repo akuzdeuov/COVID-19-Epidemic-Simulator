@@ -7,6 +7,5 @@ https://ieeexplore.ieee.org/document/7591271
 2. NumPy
 3. Matplotlib
 
-**How to install**
- 
+**How to install?**
  pip install -e /path/to/setup/folder
