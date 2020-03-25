@@ -1,6 +1,10 @@
 # COVID-19-Stochastic-Simulator
-A modified version of an algorithm proposed in this paper:
+A modified version of Discrete Time Markov Chain based simulator proposed in this paper:
+
 https://ieeexplore.ieee.org/document/7591271
+
+The simulator capable of simulating SEQISR (susceptible, exposed, quarantined, infected, severe infected and recovered) model can be reduced to simpler models by setting some of the parameters (transition probabilities) to zero. 
+
 
 **The simulator was tested using**
 1. Ubuntu 16.04
