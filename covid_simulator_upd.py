@@ -5,8 +5,6 @@ Created on Tue Mar 24 12:32:39 2020
 
 @author: askat
 """
-from joblib import Parallel, delayed
-import multiprocessing
 import random
 import numpy as np
 import time 
@@ -23,7 +21,7 @@ class Node:
         self.param_mir = 0.0          # Maternal immunization rate
         
         self.param_beta_exp = 0.1     # Susceptible to exposed transition constant
-        self.param_qr  = 0.02        # Daily quarantine rate (Ratio of Exposed getting Quarantined)
+        self.param_qr  = 0.02         # Daily quarantine rate (Ratio of Exposed getting Quarantined)
         self.param_beta_inf = 0.0     # Susceptible to infected transition constant
         self.param_sir  = 0.01        # Daily severe infected rate (Ratio of Infected getting Severe Infected)
         
@@ -82,10 +80,7 @@ class Node:
         self.source_ind = []
         self.dest_ind = []
         
-        # number of cores in cpu
-        self.num_cores = multiprocessing.cpu_count()
-        
-        
+
     def check_init(self):
         if self.param_beta_exp == 0 and self.param_beta_inf == 0:
             print('[ERROR] Both beta_exp and beta_inf cannot be zero.')
@@ -347,6 +342,7 @@ class Node:
     def stoch_solver(self):
         # define a list to store transitions
         expval = []
+        state_1 = self.states_x[1]
                                 
         # Total population is the sum of all states except birth and death
         total_pop = self.states_x[1:-1].sum()
@@ -362,7 +358,7 @@ class Node:
    
         # Transition 4 - Susceptible to Vaccinated[1]
         if self.param_vr != 0:
-            expval.append(self.states_x[1] * self.param_vr * self.param_dt)
+            expval.append(state_1 * self.param_vr * self.param_dt)
             
         # Transition 5 - Vaccinated[i] to Vaccinated[i+1] until i+1 == n_vac
         if self.param_n_vac != 0:
@@ -382,10 +378,10 @@ class Node:
                 self.states_x.dot(self.ind_sin).sum() + self.param_eps_qua * self.states_x.dot(self.ind_qua).sum()
             
         if self.param_n_exp != 0:
-            expval.append(self.states_x[1] * temp1 * self.param_beta_exp * self.param_dt / total_pop)
+            expval.append(state_1 * temp1 * self.param_beta_exp * self.param_dt / total_pop)
             
         # Transition 9 - Susceptible to Infected[1] 
-        expval.append(self.states_x[1] * temp1 * self.param_beta_inf * self.param_dt / total_pop)
+        expval.append(state_1 * temp1 * self.param_beta_inf * self.param_dt / total_pop)
         
         # Transition 10 - Exposed[i] to Exposed[i+1] until i+1 == n_exp
         expval += (self.states_x[self.ind_exp1:self.ind_exp1 + self.param_n_exp - 1] * \
