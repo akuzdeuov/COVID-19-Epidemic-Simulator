@@ -525,7 +525,7 @@ def main():
             plt.xlim(0,node.param_sim_len)
             ax.grid(linestyle=':', linewidth=1)
             plt.ylabel("Number of individuals", fontsize=18)
-            plt.legend(loc="upper right", ncol=1)
+            plt.legend(loc="upper left", ncol=1)
             
             ax2 = plt.axes([0.125, -0.2, 0.778, 0.2])
             ax2.plot(time_arr, state_sin, linewidth=1, color='r', linestyle = '--', label = 'Severe Infected')
