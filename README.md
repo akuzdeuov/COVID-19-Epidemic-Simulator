@@ -8,4 +8,5 @@ https://ieeexplore.ieee.org/document/7591271
 3. Matplotlib
 
 **How to install**
-pip install -e /path/to/setup/folder
+ 
+ pip install -e /path/to/setup/folder
