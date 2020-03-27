@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 24 12:32:39 2020
+Created on Fri Mar 27 09:24:35 2020
 
 @author: askat
 """
+
 import random
 import numpy as np
 import time 
@@ -238,10 +239,10 @@ class Node:
             self.source.append('Quarantined_{}'.format(ind + 1))
             self.dest.append('Quarantined_{}'.format(ind + 2))
             
-        # Transition 14 - Quarantined[n_exp] to Severe_Infected[1]
+        # Transition 14 - Quarantined[n_exp] to Infected[1]
         if self.param_n_exp != 0:
             self.source.append('Quarantined_{}'.format(n_exp))
-            self.dest.append('Severe_Infected_1')
+            self.dest.append('Infected_1')
         
         # Transition 15 - Infected[i] to Infected[i+1] until i+1 == n_inf
         for ind in range(n_inf - 1):
@@ -403,7 +404,7 @@ class Node:
         expval += (self.states_x[self.ind_qua1:self.ind_qua1 + self.param_n_exp - 1] * \
                    (1 - self.param_dr * self.param_dt)).tolist()
 
-        # Transition 14 - Quarantined[n_exp] to Severe_Infected[1]
+        # Transition 14 - Quarantined[n_exp] to Infected[1]
         if self.param_n_exp != 0:
             expval.append(self.states_x[self.ind_quan] * (1 - self.param_dr * self.param_dt))
             
@@ -475,7 +476,7 @@ class Node:
 def main():
     # initialize a new node            
     node = Node()
-        
+    
     # check correctenes of the initialization 
     if node.check_init():
         # create states based on the
@@ -501,7 +502,7 @@ def main():
                 print("Sim.time: {:.4f} sec, Iteration: {}/{}".format(end - start, ind + 1, node.param_num_sim))
         
         # if visualization is enabled
-        # then show plot states
+        # then plot states
         if node.param_vis_on:
             # extract all states from states array    
             time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
