@@ -162,15 +162,11 @@ class Node:
         self.states_type.append('Dead')
         self.states_x.append(0)
         
-        #print(self.states_name)
-        
         # convert states into numpy arrays
         # for fast processing
         self.states_x = np.asarray(self.states_x, dtype=np.float32)
         self.states_dx = np.zeros(self.states_x.shape, dtype=np.float32)
-        #self.states_name = np.asarray(self.states_name, dtype=str)
-        #self.states_type = np.asarray(self.states_type, dtype=str)
-
+        
         # initialize number of states
         self.param_num_states = len(self.states_x)
         
@@ -331,11 +327,9 @@ class Node:
         self.ind_inf1 = self.states_name.index('Infected_1')
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
         
-    
         
     def dx_generator(self, size, val):
         dx = 0
-      
         for ind in range(size):
             rand_num = random.uniform(0, 1)
             if rand_num < val:
