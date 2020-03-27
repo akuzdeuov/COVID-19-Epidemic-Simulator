@@ -37,4 +37,4 @@ Then type the following command on your terminal:
  https://www.youtube.com/watch?v=RM0K6Kq-Yho 
 
 **Algorithm Pipeline**
-![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/covid_epidemic_statechart_hav2.png)
+![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/covid_epidemic_statechart.png)
