@@ -1,4 +1,4 @@
-# COVID-19-Stochastic-Simulator
+# COVID-19-Epidemic-Simulator
 A modified version of Discrete Time Markov Chain based simulator proposed in this paper:
 
 https://ieeexplore.ieee.org/document/7591271
