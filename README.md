@@ -3,7 +3,7 @@ A modified version of Discrete Time Markov Chain based simulator proposed in thi
 
 https://ieeexplore.ieee.org/document/7591271
 
-The simulator capable of simulating SEQISR (susceptible, exposed, quarantined, infected, severe infected and recovered) model can be reduced to simpler models by setting some of the parameters (transition probabilities) to zero. 
+The simulator capable of simulating **SEQISR (susceptible, exposed, quarantined, infected, severe infected and recovered)** model can be reduced to simpler models by setting some of the parameters (transition probabilities) to zero. 
 
 
 **Prerequisites**
@@ -11,6 +11,7 @@ The simulator capable of simulating SEQISR (susceptible, exposed, quarantined, i
 2. Python 3
 3. NumPy
 4. Matplotlib
+
 
 **How to install?**
 
