@@ -22,19 +22,19 @@ class Node:
         self.param_mir = 0.0          # Maternal immunization rate
         
         self.param_beta_exp = 0.1     # Susceptible to exposed transition constant
-        self.param_qr  = 0.02         # Daily quarantine rate (Ratio of Exposed getting Quarantined)
+        self.param_qr = 0.02          # Daily quarantine rate (Ratio of Exposed getting Quarantined)
         self.param_beta_inf = 0.0     # Susceptible to infected transition constant
-        self.param_sir  = 0.01        # Daily severe infected rate (Ratio of Infected getting Severe Infected)
+        self.param_sir = 0.01         # Daily severe infected rate (Ratio of Infected getting Severe Infected)
         
         self.param_eps_exp = 0.7      # Disease transmission rate of exposed compared to the infected
         self.param_eps_qua = 0.3      # Disease transmission rate of quarantined compared to the infected
         self.param_eps_sev = 0.3      # Disease transmission rate of severe infected compared to the infected
         
-        self.param_hosp_capacity = 3000;  # Maximum amount patients that hospital can accommodate
+        self.param_hosp_capacity = 3000  # Maximum amount patients that hospital can accommodate
         
         self.param_gamma_mor = 0.0    # Infected to Dead transition probability
-        self.param_gamma_mor1 = 0.03; # Severe Infected (Hospitalized) to Dead transition probability
-        self.param_gamma_mor2 = 0.1;  # Severe Infected (Not Hospitalized) to Dead transition probability
+        self.param_gamma_mor1 = 0.03  # Severe Infected (Hospitalized) to Dead transition probability
+        self.param_gamma_mor2 = 0.1   # Severe Infected (Not Hospitalized) to Dead transition probability
         self.param_gamma_im = 0.9     # Infected to Recovery Immunized transition probability
         
         self.param_dt = 1/24          # Sampling time in days (1/24 corresponds to one hour)
@@ -162,11 +162,15 @@ class Node:
         self.states_type.append('Dead')
         self.states_x.append(0)
         
+        #print(self.states_name)
+        
         # convert states into numpy arrays
         # for fast processing
         self.states_x = np.asarray(self.states_x, dtype=np.float32)
         self.states_dx = np.zeros(self.states_x.shape, dtype=np.float32)
-        
+        #self.states_name = np.asarray(self.states_name, dtype=str)
+        #self.states_type = np.asarray(self.states_type, dtype=str)
+
         # initialize number of states
         self.param_num_states = len(self.states_x)
         
@@ -327,9 +331,11 @@ class Node:
         self.ind_inf1 = self.states_name.index('Infected_1')
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
         
+    
         
     def dx_generator(self, size, val):
         dx = 0
+      
         for ind in range(size):
             rand_num = random.uniform(0, 1)
             if rand_num < val:
@@ -445,10 +451,12 @@ class Node:
         
         # Randomly generate the transition value based on the expected value
         for eval, sind, dind in zip(expval, self.source_ind, self.dest_ind):
-            if eval < 10:
+            if eval < 10 and eval > 0:
                 temp1 = int(np.ceil(eval * 10 + np.finfo(np.float32).eps))
                 temp2 = eval/temp1
                 dx = self.dx_generator(temp1, temp2)
+            elif eval < 0:
+                dx = 0
             else:
                 dx = round(eval)
      
