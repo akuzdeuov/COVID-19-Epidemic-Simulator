@@ -11,31 +11,23 @@ The simulator capable of simulating **SEQISR (susceptible, exposed, quarantined,
 2. Python 3
 3. NumPy
 4. Matplotlib
+5. Qt Creator 4.11.1 (If we want to use GUI)
 
 
-**How to install?**
-
-Download and unzip files, or just simply clone files. 
-Then type the following command on your terminal: 
-
- *pip install -e /path/to/folder/setup.py* 
+ **How to run without GUI?**
  
- **How to run?**
+In this case all initial parameters need to be set manually. After setting parameters, open the terminal and insert the following command: 
  
- Open the terminal and insert the following command: 
- 
- *covid19_simulator*
+ *python covid19_simulator.py*
  
  **Output**
  
  ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
  
- **How to create .exe file from .py file?**
- 1. Install Pyinstaller if you don't have it: *sudo pip3 install Pyinstaller*
- 2. *pyinstaller --onefile covid19_simulator.py*
- 3. The previous command generates two folders: **_build_** and **_dist_**. The generated **_covid19_simulator.exe_** is inside **_dist_** folder. To execute this file: *./covid19_simulator.exe*
+ **How to run with GUI?**
  
- https://www.youtube.com/watch?v=RM0K6Kq-Yho 
+ 
+ 
 
 **Algorithm Pipeline**
 ![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/covid_epidemic_statechart.png)
