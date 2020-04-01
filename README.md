@@ -25,6 +25,7 @@ In this case all initial parameters need to be set manually. After setting param
  ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
  
  **How to run with GUI?**
+ If you have successfully installed Qt Creator then you should be able to open *covid19_simulator_qt* project.
  
  
  
