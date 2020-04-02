@@ -332,7 +332,6 @@ class Node:
         self.ind_infn = self.states_name.index('Infected_{}'.format(self.param_n_inf))
         
     
-        
     def dx_generator(self, size, val):
         dx = 0
       
