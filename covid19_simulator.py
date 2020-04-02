@@ -136,8 +136,8 @@ class Node:
             else:
                 self.states_name.append('Severe_Infected_{}'.format(count - n_vac_2exp_inf))
                 self.states_type.append('Infected')
-                if count == n_vac_2exp + 1:
-                    self.states_x.append(self.init_isolated)
+                if count == n_vac_2exp_inf + 1:
+                    self.states_x.append(self.init_severe_infected)
                     count += 1
                     continue
                 
