@@ -18,7 +18,7 @@ The simulator capable of simulating **SEQISR (susceptible, exposed, quarantined,
  
 In this case all initial parameters need to be set manually. After setting parameters, open the terminal and insert the following command: 
  
- *python covid19_simulator.py*
+ *python covid19_simulator_v2.py*
  
  **Output**
  
@@ -26,11 +26,9 @@ In this case all initial parameters need to be set manually. After setting param
  
  **How to run with GUI?**
  
- GUI allows you set parameters without opening the files. If you have successfully installed Qt Creator then you should be able to open *covid19_simulator_qt* project.
+GUI allows you set parameters without opening the files. If you have successfully installed Qt Creator then you should be able to open *covid19_simulator_qt* project.
  
  ![gui](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Epidemic-Simulator/master/qt_gui.png)
  
  
-
-**Algorithm Pipeline**
-![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/covid_epidemic_statechart.png)
+![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Epidemic-Simulator/master/covid_epidemic_statechart_v2.png)
