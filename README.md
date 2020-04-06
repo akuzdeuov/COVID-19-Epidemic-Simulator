@@ -8,6 +8,12 @@ The simulator capable of simulating **SEQISR (susceptible, exposed, quarantined,
 ![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Epidemic-Simulator/master/covid_epidemic_statechart_v2.png)
 
 
+**For more information please visit our website and youtube channel:**
+
+1. ISSAI website: https://issai.nu.edu.kz/2020/04/02/issai-team-developed-covid-19-epidemic-simulator/
+2. Youtube channel: https://www.youtube.com/channel/UCr7o_0wW4nkqx-G5b7Zopgw 
+
+
 **Prerequisites**
 1. Ubuntu 16.04
 2. Python 3
