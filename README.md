@@ -28,9 +28,9 @@ In this case all initial parameters need to be set manually. After setting param
  
  *python covid19_simulator_v2.py*
  
- **Results**
+ **Example result**
  
- ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Stochastic-Simulator/master/plot.png)
+ ![plot](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Epidemic-Simulator/master/plot_v2.png)
  
  **How to run with GUI?**
  
