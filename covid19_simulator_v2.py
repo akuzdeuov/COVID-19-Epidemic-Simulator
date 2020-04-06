@@ -22,7 +22,7 @@ class Node:
         # population getting vaccinated)           
         self.param_vr = 0.0            
         # Ratio of the immunized after vaccination
-        self.param_vir = 0.9
+        self.param_vir = 0.0
         # Maternal immunization rate          
         self.param_mir = 0.0          
         # Susceptible to exposed transition constant
@@ -33,27 +33,27 @@ class Node:
         self.param_beta_inf = 0.0
         # Daily severe infected rate (Ratio of Infected 
         # getting Severe Infected)
-        self.param_sir = 0.01         
+        self.param_sir = 0.03         
         # Disease transmission rate of exposed compared to the infected
-        self.param_eps_exp = 0.7
+        self.param_eps_exp = 1.0
         # Disease transmission rate of quarantined compared to the infected
-        self.param_eps_qua = 0.3
+        self.param_eps_qua = 0.2
         # Disease transmission rate of severe infected compared to the infected
-        self.param_eps_sev = 0.3      
+        self.param_eps_sev = 0.2      
         # Maximum amount patients that hospital can accommodate
-        self.param_hosp_capacity = 3000  
+        self.param_hosp_capacity = 885  
         # Infected to Dead transition probability
         self.param_gamma_mor = 0.0
         # Severe Infected (Hospitalized) to Dead transition probability
-        self.param_gamma_mor1 = 0.03
+        self.param_gamma_mor1 = 0.2
         # Severe Infected (Not Hospitalized) to Dead transition probability
-        self.param_gamma_mor2 = 0.1
+        self.param_gamma_mor2 = 0.4
         # Infected to Recovery Immunized transition probability
         self.param_gamma_im = 0.9     
         # Sampling time in days (1/24 corresponds to one hour)
         self.param_dt = 1/24
         # Length of simulation in days          
-        self.param_sim_len = 365
+        self.param_sim_len = 100
         # Number of states
         self.param_num_states = 0
         # Number of simulation steps
@@ -170,7 +170,6 @@ class Node:
                     continue
                 
             self.states_x.append(0)
-                
             count += 1
             
         # Add the Immunized and dead states
@@ -483,25 +482,32 @@ class Node:
         expval.append(self.states_x[self.ind_ison] * self.param_gamma_im)
         
         # Transition 22 - Severe_Infected[n_inf] to Recovery Immunized
-        expval.append(self.states_x[self.ind_sinn] * self.param_gamma_im)
+        # expval.append(self.states_x[self.ind_sinn] * self.param_gamma_im)
+        states_sin = self.states_x.dot(self.ind_sin).sum()
+        if states_sin < self.param_hosp_capacity:
+            expval.append(self.states_x[self.ind_sinn] * \
+                          (1 - self.param_gamma_mor1) * self.param_gamma_im)
+        else:
+            expval.append(self.states_x[self.ind_sinn] * \
+                          (1 - self.param_gamma_mor2) * self.param_gamma_im)
         
         # Transition 23 - Infected[n_inf] to Susceptible
         expval.append(self.states_x[self.ind_infn] * \
-                          (1 - self.param_gamma_mor - self.param_gamma_im))
+                          (1 - self.param_gamma_mor) * (1 - self.param_gamma_im))
         
         # Transition 24 - Isolated[n_inf] to Susceptible
         expval.append(self.states_x[self.ind_ison] * \
-                          (1 - self.param_gamma_mor - self.param_gamma_im))
+                          (1 - self.param_gamma_mor) * (1 - self.param_gamma_im))
             
         # Transition 25 - Severe_Infected[n_inf] to Susceptible
         states_sin = self.states_x.dot(self.ind_sin).sum()
         
         if states_sin < self.param_hosp_capacity:
             expval.append(self.states_x[self.ind_sinn] * \
-                          (1 - self.param_gamma_mor1 - self.param_gamma_im))
+                          (1 - self.param_gamma_mor1) * (1 - self.param_gamma_im))
         else:
             expval.append(self.states_x[self.ind_sinn] * \
-                          (1 - self.param_gamma_mor2 - self.param_gamma_im))
+                          (1 - self.param_gamma_mor2) * (1 - self.param_gamma_im))
             
         # Transition 26 - Infected[n_inf] to Dead
         expval.append(self.states_x[self.ind_infn] * self.param_gamma_mor)
@@ -571,7 +577,7 @@ def main():
         if node.param_vis_on:
             # extract all states from states array    
             time_arr = np.linspace(0, node.param_num_sim, node.param_num_sim) * node.param_dt
-            state_sus = states_arr.dot(node.ind_sus)
+            #state_sus = states_arr.dot(node.ind_sus)
             state_exp = states_arr.dot(node.ind_exp)
             state_inf = states_arr.dot(node.ind_inf)
             state_iso = states_arr.dot(node.ind_iso)
@@ -583,7 +589,7 @@ def main():
             print('Inf {}, Sev Inf {}, Dead {}'.format(np.max(state_inf), np.max(state_sin), np.max(state_dea)))
         
             fig, ax = plt.subplots(figsize=(8,4))
-            ax.plot(time_arr, state_sus, linewidth=1, color='dodgerblue', label = 'Susceptible')
+            #ax.plot(time_arr, state_sus, linewidth=1, color='dodgerblue', label = 'Susceptible')
             ax.plot(time_arr, state_exp, linewidth=1, color='lime', linestyle = ':',  label = 'Exposed')
             ax.plot(time_arr, state_qua, linewidth=1, color='fuchsia', linestyle = '-.', label = 'Quarantined')
             ax.plot(time_arr, state_inf, linewidth=1, color='navy', linestyle = '--', label = 'Infected')
@@ -591,16 +597,16 @@ def main():
             ax.plot(time_arr, state_sin, linewidth=1, color='r', linestyle = '--', label = 'Severe Infected')
             ax.plot(time_arr, state_imm, linewidth=1, color='cyan', label = 'Immunized')
             ax.plot(time_arr, state_dea, linewidth=1, color='k', label = 'Dead')
-            plt.ylim(0,node.init_susceptible)
+            #plt.ylim(0,node.init_susceptible)
             plt.xlim(0,node.param_sim_len)
             ax.grid(linestyle=':', linewidth=1)
             plt.ylabel("Number of individuals", fontsize=18)
             plt.legend(loc="upper left", ncol=1)
             
             ax2 = plt.axes([0.125, -0.2, 0.778, 0.2])
-            ax2.plot(time_arr, state_qua, linewidth=1, color='fuchsia', linestyle = '-.', label = 'Quarantined')
+            #ax2.plot(time_arr, state_qua, linewidth=1, color='fuchsia', linestyle = '-.', label = 'Quarantined')
             ax2.plot(time_arr, state_sin, linewidth=1, color='r', linestyle = '--', label = 'Severe Infected')
-            ax2.plot(time_arr, state_iso, linewidth=1, color='g', linestyle = '--', label = 'Isolated')
+            #ax2.plot(time_arr, state_iso, linewidth=1, color='g', linestyle = '--', label = 'Isolated')
             ax2.plot(time_arr, np.ones(node.param_num_sim) * node.param_hosp_capacity, linewidth=1, color='lime', label = 'Hospital Capacity')
             ax2.plot(time_arr, state_dea, linewidth=1, color='k', label = 'Dead')
             plt.xlabel("Time (days)", fontsize=18)
