@@ -3,7 +3,7 @@ A modified version of Discrete Time Markov Chain based simulator proposed in thi
 
 https://ieeexplore.ieee.org/document/7591271
 
-The simulator capable of simulating **SEQISR (susceptible, exposed, quarantined, infected, severe infected and recovered)** model can be reduced to simpler models by setting some of the parameters (transition probabilities) to zero. 
+The simulator capable of simulating **SEIR (Susceptible, Exposed, Infected, Recovered)** model can be reduced to simpler models by setting some of the parameters (transition probabilities) to zero. 
 
 ![image](https://raw.githubusercontent.com/akuzdeuov/COVID-19-Epidemic-Simulator/master/covid_epidemic_statechart_v2.png)
 
