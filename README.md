@@ -16,7 +16,7 @@ The simulator capable of simulating **SEIR (Susceptible, Exposed, Infected, Reco
 
 **Prerequisites**
 1. Ubuntu 16.04
-2. Python 3
+2. Python 
 3. NumPy
 4. Matplotlib
 5. Qt Creator 4.11.1 (If we want to use GUI)
